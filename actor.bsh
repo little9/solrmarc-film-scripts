@@ -1,0 +1,110 @@
+import org.marc4j.marc.Record;
+import org.solrmarc.tools.Utils;
+
+// define the base level indexer so that its methods can be called from the script.
+// note that the SolrIndexer code will set this value before the script methods are called.
+
+org.solrmarc.index.SolrIndexer indexer = null;
+
+public String nameSwitch(String inputName) {
+
+    String[] switchname = inputName.split(",");
+    String newname = switchname[0] + ", " + switchname[1];
+    return newname; 
+}
+
+public String cleanString(String inputString) {
+    cleanedString = inputString.replace("drt","").replace("actor", "").replace("director", "").replace("producer", "").replace("screenwriter", "").replace("aus","").replace("pro","").replace("prf","").replace("act","").replace("prd","").replace(".","").replace(".","").replace(", Jr.", " Jr.").replace(".","").replaceAll(" +", " ").replaceAll("\\([^)]*\\)", "").replaceAll("\\[.*\\]", "").replaceAll("and", "").replaceAll(";","").trim().replaceAll(",$","");
+    return cleanedString;
+    
+}
+
+
+
+public Set getActorFacet(Record record) {
+    
+    LinkedHashSet result = new LinkedHashSet();
+ 
+    Set values = indexer.getFieldList(record, "700ae4");
+
+    for (String name : values)
+	{
+	 try {   
+	    if (name.contains("act.") || name.contains("prf."))  {     
+				     
+		String cleanName = cleanString(nameSwitch(name));
+	       
+		result.add(cleanName);
+	    } else {
+		if (name.contains("actor."))  {
+		  
+		    String cleanName = cleanString (name);
+		    result.add(cleanName);
+		    
+		}
+	    }
+	     // if we found a matching value and return it.
+               if (!result.isEmpty())                                return result;
+	  }     catch (ArrayIndexOutOfBoundsException e) {
+	
+
+    }
+    catch (NullPointerException e) {
+
+
+    }   
+
+    catch (IllegalStateException e) {
+
+	
+    } 
+	}
+
+   
+    if (result.isEmpty()) {
+     // If you can't find anything in the relator codes, check the 511 1 a fields 
+        Set values = indexer.getFieldList(record, "5111a");
+	     for (String name : values) 
+	     {
+	     
+		 //	 String cleanname = cleanString(name);
+		 name_without_char_info = name.replaceAll("\\([^)]*\\)", "").replaceAll("\\)","").replaceAll(";","").replaceAll("--","").replaceAll(":","").replaceAll("\\'[^)]*\\'", "").replaceAll(", ",",").replaceAll("&", "").replaceAll("\b[a-z].*?\b","").replaceAll(",$","");
+		 String[] names = name_without_char_info.split(",");
+
+	    	     for (String actorname : names) {
+			 
+			 try { 
+
+			     String person = cleanString(actorname);
+			     			 	  
+			     // First we need to split the name so we can rearrange the name for display 
+			     String[] switchname = person.split(" ");
+		
+			     // This is the firstname lastname display name 
+			     if (switchname.length == 2) {
+				 String newname = switchname[1] + ", " + switchname[0];
+				 result.add(newname); 
+			
+			     } else {
+				 String newname = switchname[2] + ", " + switchname[0] + " " + switchname[1];
+				 result.add(newname); 
+			     }
+		    
+			  
+
+			 } catch (ArrayIndexOutOfBoundsException e) {
+	
+		        
+
+				 }
+		     }		      
+
+
+	     if (!result.isEmpty())                                return result;	
+	     }	
+
+
+    }
+    
+    return result;
+}

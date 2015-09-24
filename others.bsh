@@ -1,0 +1,299 @@
+import org.marc4j.marc.Record;
+import org.solrmarc.tools.Utils;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+// define the base level indexer so that its methods can be called from the script.
+// note that the SolrIndexer code will set this value before the script methods are called.
+org.solrmarc.index.SolrIndexer indexer = null;
+
+public Set getComposerFacet(Record record) {
+	String title_stmt = indexer.getFirstFieldVal(record, "508a");
+
+
+	LinkedHashSet result = new LinkedHashSet();
+
+	Set values = indexer.getFieldList(record, "700ae4");
+
+	for (String person : values) {
+		try {
+			if (person.contains("cmp.")) {
+				// If one of the names in values has the relator code drt, stick it in the result set
+
+				// First we need to split the name so we can rearrange the name for display
+				String[] switchname = person.split(",");
+
+				// This is the firstname lastname display name
+				String newname = switchname[1] + " " + switchname[0];
+
+				// Stick the the name into results and remove all the relator codes so they don't show up
+				// in the display
+				result.add(newname.replace("cmp", "").replace("aus", "").replace("pro", "").replace("act", "").replace("prd", "").replace(".", "").trim());
+			}
+			else {
+				if (person.contains("composer.")) {
+					result.add(person);
+				}
+			}
+			// if we found a matching value and return it.
+			if (!result.isEmpty()) return result;
+		}   catch(ArrayIndexOutOfBoundsException e)
+		{
+		}
+	}
+
+	// Nothing worked!
+	if (result.isEmpty()) {
+		try {
+			// Define a regex pattern to catch directed by
+			Pattern pattern = Pattern.compile("([^;]+)");
+
+			// Split the title statement on the phrase directed by
+			String[] title_stmt_split = title_stmt.split("music by");
+			String clean_title_stmt = title_stmt_split[1].replace(".", "");
+			Matcher matcher = pattern.matcher(clean_title_stmt);
+			if (matcher.find()) {
+				String person = matcher.group(0).trim();
+				// First we need to split the name so we can rearrange the name for display
+				String[] switchname = person.split(" ");
+				// This is the firstname lastname display name
+				String newname = switchname[1] + ", " + switchname[0];
+
+
+				result.add(newname);
+			}
+
+			// Stick that in the result
+		}
+
+		catch(ArrayIndexOutOfBoundsException e)
+		{
+		}
+		catch(NullPointerException e)
+		{
+		}
+
+		catch(IllegalStateException e)
+		{
+		}
+	}
+
+	// Index the directed by phrase from the title statement
+	return result;
+}
+
+public Set getScreenWriterFacet(Record record) {
+	String title_stmt = indexer.getFirstFieldVal(record, "508a");
+
+	LinkedHashSet result = new LinkedHashSet();
+
+	Set values = indexer.getFieldList(record, "700ae4");
+
+	for (String person : values) {
+		try {
+			if (person.contains("aus.")) {
+				// If one of the names in values has the relator code drt, stick it in the result set
+
+				// First we need to split the name so we can rearrange the name for display
+				String[] switchname = person.split(",");
+
+				// This is the firstname lastname display name
+				String newname = switchname[0] + ", " + switchname[1];
+
+				// Stick the the name into results and remove all the relator codes so they don't show up
+				// in the display
+				result.add(newname.replace("cmp", "").replace("aus", "").replace("pro", "").replace("act", "").replace("prd", "").replace(".", "").trim());
+			}
+			else {
+				if (person.contains("screenwriter.")) {
+					result.add(person);
+				}
+			}
+			// if we found a matching value and return it.
+			if (!result.isEmpty()) return result;
+		}   catch(ArrayIndexOutOfBoundsException e)
+		{
+		}
+	}
+
+	// Nothing worked!
+	if (result.isEmpty()) {
+		try {
+			// Define a regex pattern to catch directed by
+			Pattern pattern = Pattern.compile("([^;]+)");
+
+			// Split the title statement on the phrase directed by
+			String[] title_stmt_split = title_stmt.split("screenplay by");
+			String clean_title_stmt = title_stmt_split[1].replace(".", "");
+			Matcher matcher = pattern.matcher(clean_title_stmt);
+			if (matcher.find()) {
+				String person = matcher.group(0).trim();
+				// First we need to split the name so we can rearrange the name for display
+				String[] switchname = person.split(" ");
+
+				// This is the firstname lastname display name
+				String newname = switchname[1] + ", " + switchname[0];
+
+
+				result.add(newname);
+			}
+
+			// Stick that in the result
+		}
+
+		catch(ArrayIndexOutOfBoundsException e)
+		{
+		}
+		catch(NullPointerException e)
+		{
+		}
+
+		catch(IllegalStateException e)
+		{
+		}
+	}
+
+	// Index the directed by phrase from the title statement
+	return result;
+}
+
+public Set getProducerFacet(Record record) {
+	String title_stmt = indexer.getFirstFieldVal(record, "508a");
+
+	LinkedHashSet result = new LinkedHashSet();
+
+	Set values = indexer.getFieldList(record, "700ae4");
+
+	for (String person : values) {
+		try {
+			if (person.contains("pro.")) {
+				// If one of the names in values has the relator code drt, stick it in the result set
+
+				// First we need to split the name so we can rearrange the name for display
+				String[] switchname = person.split(",");
+
+				// This is the firstname lastname display name
+				String newname = switchname[0] + ", " + switchname[1];
+
+				// Stick the the name into results and remove all the relator codes so they don't show up
+				// in the display
+				result.add(newname.replace("pro", "").replace("aus", "").replace("pro", "").replace("act", "").replace("prd", "").replace(".", "").trim());
+			}
+			else {
+				if (person.contains("producer.")) {
+					String person = person.trim();
+					// First we need to split the name so we can rearrange the name for display
+					String[] switchname = person.split(" ");
+
+					// This is the firstname lastname display name
+					String newname = switchname[0] + ", " + switchname[1];
+
+
+					result.add(newname);
+				}
+			}
+			// if we found a matching value and return it.
+			if (!result.isEmpty()) return result;
+		}   catch(ArrayIndexOutOfBoundsException e)
+		{
+		}
+	}
+
+	// Nothing worked!
+	if (result.isEmpty()) {
+		try {
+			// Define a regex pattern to catch directed by
+			Pattern pattern = Pattern.compile("([^;]+)");
+
+			// Split the title statement on the phrase directed by
+			String[] title_stmt_split = title_stmt.split("produced by");
+			String clean_title_stmt = title_stmt_split[1].replace(".", "");
+			Matcher matcher = pattern.matcher(clean_title_stmt);
+			if (matcher.find()) {
+				String person = matcher.group(0).trim();
+				// First we need to split the name so we can rearrange the name for display
+				String[] switchname = person.split(" ");
+
+				// This is the firstname lastname display name
+				String newname = switchname[1] + ", " + switchname[0];
+
+
+				result.add(newname);
+			}
+
+			// Stick that in the result
+		}
+
+		catch(ArrayIndexOutOfBoundsException e)
+		{
+		}
+		catch(NullPointerException e)
+		{
+		}
+
+		catch(IllegalStateException e)
+		{
+		}
+	}
+
+	// Index the directed by phrase from the title statement
+	return result;
+}
+
+public Set getCatDate(Record record) {
+	LinkedHashSet result = new LinkedHashSet();
+
+	Set values = indexer.getFieldList(record, "005[0-7]");
+
+	for (String cat_date : values) {
+		cat_date = cat_date.trim();
+
+		if (cat_date == null || cat_date.isEmpty() || cat_date.matches(".*[a-zA-Z]+.*")) {
+			result.add("0");
+		}
+		else {
+			result.add(cat_date);
+		}
+	}
+
+	return result;
+}
+
+public Set getItemLocation(Record record) {
+	// All the DVDs at the Music Library have DVD in the 099 MARC field.
+
+	LinkedHashSet result = new LinkedHashSet();
+    LinkedHashSet richter_set = new LinkedHashSet();
+    
+	String local_call_number  = indexer.getFirstFieldVal(record, "099a");
+    
+	String non_fiction_call_number = indexer.getFirstFieldVal(record, "098a");
+	
+    try {
+		local_call_number = local_call_number.trim();
+       
+        
+		if (local_call_number.matches(".*DVD+.*")) {
+			result.add("Weeks Music Library");
+		}
+        
+        else if (non_fiction_call_number != null) {
+            result.add("Richter Library Non-Fiction");
+        }
+        
+		else {
+			result.add("Richter Library");
+		}
+	}
+
+	catch(NullPointerException e)
+	{
+        result.add("Richter Library");
+    }
+
+
+
+
+
+	return result;
+}

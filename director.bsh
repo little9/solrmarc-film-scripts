@@ -1,0 +1,132 @@
+import org.marc4j.marc.Record;
+import org.solrmarc.tools.Utils;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
+// define the base level indexer so that its methods can be called from the script.
+// note that the SolrIndexer code will set this value before the script methods are called.
+org.solrmarc.index.SolrIndexer indexer = null;
+
+
+public String nameSwitch(String inputName) {
+
+    String[] switchname = inputName.split(",");
+    String newname = switchname[0] + ", " + switchname[1];
+    return newname; 
+}
+
+public String cleanString(String inputString) {
+    cleanedString = inputString.replace("drt","").replace("actor", "").replace("director", "").replace("producer", "").replace("screenwriter", "").replace("aus","").replace("pro","").replace("prf","").replace("act","").replace("prd","").replace(".","").replace(".","").replace(", Jr.", " Jr.").replace(".","").replaceAll(" +", " ").replaceAll("\\([^)]*\\)", "").replaceAll("\\[.*\\]", "").replaceAll("and", "").replaceAll(";","").trim().replaceAll(" +", " ").replaceAll(",$","");
+    return cleanedString;
+    
+}
+
+
+public Set getDirectorFacet(Record record) {
+
+    // Get the title statement field for the record. We'll look at this there are no relator codes
+    // for a director in the record 
+    String title_stmt = indexer.getFirstFieldVal(record, "245c");
+    
+    // This is the set that is returned if a result is found
+    LinkedHashSet result = new LinkedHashSet();
+ 
+    // This is the set of marc fields that contains personal names and their relator codes
+    Set values = indexer.getFieldList(record, "700ae4");
+  
+    for (String name : values)
+	{
+	    try { 
+
+
+
+	    if (name.contains("drt."))  {
+		// If one of the names in values has the relator code drt, stick it in the result set
+		
+		// First we need to split the name so we can rearrange the name for display 
+		String[] switchname = name.split(",");
+		
+		// This is the firstname lastname display name 
+		String newname = switchname[0] + ", " + switchname[1];
+		
+		// Stick the the name into results and remove all the relator codes so they don't show up
+		// in the display 
+		result.add(cleanString(newname));
+	    } else {
+		// Check to see if the name has the other variant of the relator code
+		if (name.contains("director."))  {
+		 		
+		    result.add(name.replace("director", "").replace(",", "").replace(".","").trim().replaceAll(" +", " "));
+		} 
+	    }
+               
+	    // If the result set isn't empty, index it 
+	    if (!result.isEmpty())                                return result;
+	  
+
+
+	    }   catch (ArrayIndexOutOfBoundsException e) {
+	
+
+    }   
+
+
+	}
+    
+    if (result.isEmpty()) {
+	// If the result set is empty after all that... try looking in the title statement 
+	
+	try {
+	    // Define a regex pattern to catch directed by 
+	      Pattern pattern = Pattern.compile( "([^;]+)" );
+	    
+	// Split the title statement on the phrase directed by 
+	    String[] title_stmt_split = title_stmt.split("directed by");
+	    String clean_title_stmt = title_stmt_split[1].replace(".","");
+	        Matcher  matcher = pattern.matcher(clean_title_stmt);
+		if (matcher.find()) {
+		   
+		   String person = matcher.group(0).trim();
+		// First we need to split the name so we can rearrange the name for display 
+		    String[] switchname = person.split(" ");
+		
+		// This is the firstname lastname display name 
+		    
+		       if (switchname.length == 2) {
+				 String newname = switchname[1] + ", " + switchname[0];
+				 result.add(cleanString(newname)); 
+				 
+			     } else {
+				 String newname = switchname[2] + ", " + switchname[0] + " " + switchname[1];
+				 result.add(cleanString(newname)); 
+		       }
+		   		 
+		    
+		}
+	
+	// Stick that in the result
+	
+	}
+  
+    catch (ArrayIndexOutOfBoundsException e) {
+	
+
+    }   
+    catch (NullPointerException e) {
+
+
+    }   
+
+    catch (IllegalStateException e) {
+
+	
+    }
+	
+    }
+
+    // Index the directed by phrase from the title statement 
+    return result;
+}
+
+
+
